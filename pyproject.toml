@@ -1,0 +1,5 @@
+[project]
+name = "open-telemetry-copilot-root-cause-analysis"
+description = "Code for a blogpost (see blog folder)"
+dependencies = [
+]
