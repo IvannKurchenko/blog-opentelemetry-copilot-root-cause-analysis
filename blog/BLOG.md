@@ -41,13 +41,12 @@ In these environments, the engineer's typical workflow could be described as fol
 like search for error logs or check metrics spikes.
 - Formulate an initial hypothesis. Based on collected data engineer can see a bigger picture and suggest clues of an issue cause.
 - Further investigation. To confirm or deny first clues, it might be required to check other parts of a system out of outlined scope:
-look at a database, verify connection to other services etc.
-- Take action or keep investigating. Depending on previous investigation results either take actions (e.g. apply patch fix) or
-repeat the loop starting from collecting more or other signals.
-
+look at a database, verify connection to other services, etc.
+- Take action or keep investigating. Depending on previous investigation results, either take actions (like deploy patch fix) or
+repeat the loop by collecting more signals.
 
 Of course, this is a very simplified version of the workflow process, and incidents can look way more complicated.
-So far, such corner cases are out of scope of this article and we are going to focus on more typical cases.
+So far, corner cases are out of scope of this article, and we are going to focus on more regular cases.
 
 Although, in the described workflow not everything can be automated (for instance, taking actions definitely should be performed by a human),
 there is still room for potential AI assistance:
@@ -60,6 +59,41 @@ Continuing the previous example, most likely there will be a number of similar l
 This can range from repeating this loop to applying a patch fix.
 
 The first two steps will be our focus for the further blog post.
+
+### OpenTelemetry Copilot architecture and workflow
+Proposed architecture in general case — abstracted over specific tools, frameworks and software.
+
+To build automation around the alerts' initial investigation, it proposed the following high-level architecture aiming to leverage
+[Agentic AI](https://en.wikipedia.org/wiki/Agentic_AI) approach.
+_Please note that the following architecture is still abstracted over specific tools or implementation details. This will
+be covered in the subsequent sections_ 
+
+![](diagrams/2-copilot-architecture.png)
+
+in comparison to the previously described observability setup there are new components and connections:
+- `Copilot` - Agent that will play a role of incident investigation assistant. To be more precise: it would react on the same `Notification` 
+that receives on-call engineer, then it will perform a `Call` to `Large Language Model (LLM)` service along with supplying 
+connection to observability as a tool. At the end of the process, the `Copilot` would send back `Reply` that would contain result 
+of initial analysis: signal summary, initial hypothesis, suggested actions, etc. 
+- `LLM` - any LLM service, internally or externally deployed.
+
+The described setup aims to simplify engineering incidents investigation workflow by eliminating a need to collect initial signals,
+summarize them and jumping to initial conclusions.  
+
+### Setup
+Since architecture and workflow are outlined, it is time to zoom into each high-level component described before.
+Here we will be more practical and describe specific tools, frameworks, scenarios for demonstrating and testing.
+
+#### Environment setup: System under observability
+First, we need to have some system in place to collect telemetry data from, which is the first component on high-level setup.
+For the sake of testing and experimentation, let's have the following system: 
+
+![](diagrams/3-environment-setup.png)
+
+This is a microservices-based backend for a hypothetical e-commerce application, consisting of a `Products Service`
+to manage inventory, an `Orders Service` to handle customer orders and send notifications. Happy path workflow is the following:
+a user searches for products via the `Products Service`, then creates an order via the `Orders Service`, which verifies
+product availability, creates an order and publishes a notification event to Kafka.
 
 ### References
 - [RCA Copilot: Transforming Network Data into Actionable Insights via Large Language Models](https://arxiv.org/abs/2507.03224)
