@@ -18,7 +18,7 @@ Engineers experience multiple hardships regularly with system monitoring, such a
 provide a single experience to access all telemetry data in a single place, in general case, monitoring stack can be quite diverse.
 - Solving repetitive problems. Plenty of production incidents look similar: third party service call timeout, invalid user input
 caused error on read, service auto-scaling did not catch up with the traffic increase, 
-- Solving straightforward problems. This somewhats complements the previous bullet point. In many cases problems to solve
+- Solving straightforward problems. This somewhat complements the previous bullet point. In many cases problems to solve
 are not just repetitive but also well-known to solve: increase timeout if possible, re-use connections, extend validation,
 provision additional resources in advance.
 
