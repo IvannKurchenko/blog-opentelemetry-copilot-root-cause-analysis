@@ -1,0 +1,10 @@
+[project]
+name = "orders-service"
+version = "0.1.0"
+description = "A service for managing orders in an e-commerce application. See README for more details."
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "ruff>=0.12.3",
+]

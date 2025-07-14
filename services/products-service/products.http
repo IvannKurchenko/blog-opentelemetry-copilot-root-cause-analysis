@@ -1,0 +1,28 @@
+### Create new product (POST /products)
+POST http://localhost:8000/products
+Content-Type: application/json
+
+{
+  "name": "Bluetooth Speaker",
+  "description": "Portable Bluetooth speaker",
+  "price": 49.99,
+  "stock": 50
+}
+  
+### Retrieve product by ID (GET /products/{id})
+GET http://localhost:8000/products/1
+
+### Search products with filters and pagination (GET /products)
+GET http://localhost:8000/products?name=Speaker&min_price=10&max_price=100&min_stock=5&max_stock=100&page=1&page_size=10
+
+### Update product by ID (PATCH /products/{id})
+PATCH http://localhost:8000/products/1
+Content-Type: application/json
+
+{
+  "price": 59.99,
+  "stock": 100
+}
+
+### Delete product by ID (DELETE /products/{id})
+DELETE http://localhost:8000/products/1
