@@ -32,7 +32,7 @@ where:
 - `Observability` - observability stack. This can be a pretty wide range of tools: starting from a single APM 
 to a combination of software for individual purposes (e.g. ELK only for logs, Prometheus for metrics, Jagger for traces).
 - `Alerts` - signals from pre-configured triggers identifying ongoing problems with running systems, like increased latency or error rate.
-- `Communication` - communication channels used by observability platform to deliver triggered alerts, such as messangers, phone, email.
+- `Communication` - communication channels used by observability platform to deliver triggered alerts, such as messengers, phone, email.
 - `Engineer(s)` - person- or team-responsible for running system support.
 
 In these environments, the engineer's typical workflow could be described as follows:
