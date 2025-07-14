@@ -23,7 +23,7 @@ are not just repetitive but also well-known to solve: increase timeout if possib
 provision additional resources in advance.
 
 Generally, observability setup can be described with the following diagram
-![1-introduction-general-setup.png](diagrams/1-introduction-general-setup.png)
+![diagrams-1-introduction-general-setup.png](diagrams/diagrams-1-introduction-general-setup.png)
 
 where:
 - `Service(s)` - one or more software components under monitoring. It can be anything under engineers' control: HTTP server, periodic task, etc.
@@ -61,19 +61,17 @@ This can range from repeating this loop to applying a patch fix.
 The first two steps will be our focus for the further blog post.
 
 ### OpenTelemetry Copilot architecture and workflow
-Proposed architecture in general case — abstracted over specific tools, frameworks and software.
-
 To build automation around the alerts' initial investigation, it proposed the following high-level architecture aiming to leverage
 [Agentic AI](https://en.wikipedia.org/wiki/Agentic_AI) approach.
 _Please note that the following architecture is still abstracted over specific tools or implementation details. This will
 be covered in the subsequent sections_ 
 
-![](diagrams/2-copilot-architecture.png)
+![diagrams-2-copilot-architecture.png](diagrams/diagrams-2-copilot-architecture.png)
 
 in comparison to the previously described observability setup there are new components and connections:
 - `Copilot` - Agent that will play a role of incident investigation assistant. To be more precise: it would react on the same `Notification` 
 that receives on-call engineer, then it will perform a `Call` to `Large Language Model (LLM)` service along with supplying 
-connection to observability as a tool. At the end of the process, the `Copilot` would send back `Reply` that would contain result 
+connection to observability as a tool. At the end of the process, the `Copilot` would send back `Reply` that would contain a result 
 of initial analysis: signal summary, initial hypothesis, suggested actions, etc. 
 - `LLM` - any LLM service, internally or externally deployed.
 
@@ -88,12 +86,59 @@ Here we will be more practical and describe specific tools, frameworks, scenario
 First, we need to have some system in place to collect telemetry data from, which is the first component on high-level setup.
 For the sake of testing and experimentation, let's have the following system: 
 
-![](diagrams/3-environment-setup.png)
+![diagrams-3-environment-setup.png](diagrams/diagrams-3-environment-setup.png)
 
 This is a microservices-based backend for a hypothetical e-commerce application, consisting of a `Products Service`
 to manage inventory, an `Orders Service` to handle customer orders and send notifications. Happy path workflow is the following:
 a user searches for products via the `Products Service`, then creates an order via the `Orders Service`, which verifies
 product availability, creates an order and publishes a notification event to Kafka.
+
+#### Observability setup: Telemetry stack
+The modern observability landscape is pretty wide in different dimensions: 
+- Instrumentation. Ecosystem-specific instrumentation libraries like [micrometer](https://micrometer.io) or instrumentation based on [Prometheus clients](https://prometheus.io/docs/instrumenting/clientlibs/).
+- Serving. Next, to store, query and visualize collected signals, their amount of software starting from OSS like [Prometheus](https://prometheus.io),
+[Jaeger](https://www.jaegertracing.io) to PaaS solutions such Splunk and NewRelic.
+- Alerting. At last, to manage incident responses and escalations, there are also offerings from OSS [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) to PagerDuty.
+
+Amidst this wide range of tooling, OpenTelemetry (OTEL) has emerged as a unifying industry standard, gaining adoption across many solutions.
+As a part of the framework, OTEL standardizes in [Semantic Conventions](https://opentelemetry.io/docs/concepts/semantic-conventions/) format
+of telemetry data to be processed. Hence, we can rely on it as unified format for telemetry data to be supplied to LLM.
+
+For the sake of example, [Grafana's LGTM](https://grafana.com/go/webinar/getting-started-with-grafana-lgtm-stack/) stack 
+has been chosen to server OTEL metrics data.
+
+![diagrams-4-telemetry-setup.png](diagrams/diagrams-4-telemetry-setup.png)
+
+Grafana on the right side would serve not only for querying and visualization, but also [raise alerts](https://grafana.com/products/cloud/alerting/).
+
+#### Communication channels setup: Notify on-call person 
+Rocket.Chat is free and open-source, and it can be run locally without issues.
+Integrations can be done through [webhooks](https://docs.rocket.chat/docs/integrations) (supported for both incoming and outgoing messages), making them a natural choice—especially since tools like Grafana also support webhooks.
+
+![diagrams-5-chat-setup.png](diagrams/diagrams-5-chat-setup.png)
+
+#### OpenTelemetry Copilot setup: plug to workflow
+Copilot is essentially a server exposing a single endpoint, triggered via a webhook from a communication channel.
+Its role is to invoke an agent equipped with an MCP-based tool that collects data from an LGTM or another telemetry store.
+Once the data is gathered, Copilot generates and sends back an RCA (Root Cause Analysis) report.
+
+![diagrams-6-copilot-setup.png](diagrams/diagrams-6-copilot-setup.png)
+
+#### Testing setup: simulate users activity
+With the bits and pieces in place, the final step is testing and demonstration. To generate meaningful telemetry signals,
+we simulate user activity using synthetic data from [Faker](https://faker.readthedocs.io/en/master/) and similar libraries. Concurrent traffic patterns are emulated with
+[Locust](https://locust.io), allowing us to test the system end-to-end.
+ 
+#### Incidents scenarios
+Incident scenarios
+These are artificial scenarios we’ll simulate using the aforementioned tools to verify whether Copilot can correctly identify the root cause.
+
+- Simple, isolated to a single `Orders Service` — an invalid record inserted into the database, causing error on read.
+- Moderate complexity within a `Products Service` — increased traffic or database latency caused by missing indexes.
+- Complex, system-wide — cascading failures across services due to repeated database connection retries. 
+
+### Results
+TODO
 
 ### References
 - [RCA Copilot: Transforming Network Data into Actionable Insights via Large Language Models](https://arxiv.org/abs/2507.03224)
