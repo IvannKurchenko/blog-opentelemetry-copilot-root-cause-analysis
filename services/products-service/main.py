@@ -7,15 +7,10 @@ from sqlalchemy import Column, Integer, String, Text, Float, select, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Database configuration
-_db_url = os.getenv(
+DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://example_user:example_password@localhost:5432/products_db",
+    "postgresql+asyncpg://user:password@localhost:5432/database",
 )
-# Handle short-form URL
-if _db_url.startswith("postgres://"):
-    _db_url = _db_url.replace("postgres://", "postgresql+asyncpg://", 1)
-DATABASE_URL = _db_url
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(
@@ -45,14 +40,15 @@ class ProductRead(ProductCreate):  # Pydantic schema for output
 
     class Config:
         orm_mode = True
- 
+
 
 class ProductList(BaseModel):  # Pydantic schema for paginated list
     items: List[ProductRead]
     total: int
     page: int
     page_size: int
-   
+
+
 class ProductUpdate(BaseModel):  # Pydantic schema for updates
     name: Optional[str] = None
     description: Optional[str] = None
@@ -61,6 +57,7 @@ class ProductUpdate(BaseModel):  # Pydantic schema for updates
 
 
 app = FastAPI(title="Products Service")
+
 
 @app.on_event("startup")
 async def on_startup():
@@ -77,7 +74,7 @@ async def get_session() -> AsyncSession:
 
 @app.post("/products", response_model=ProductRead)
 async def create_product(
-    product: ProductCreate, session: AsyncSession = Depends(get_session)
+        product: ProductCreate, session: AsyncSession = Depends(get_session)
 ):
     """Create a new product in the database."""
     db_product = Product(**product.dict())
@@ -86,9 +83,10 @@ async def create_product(
     await session.refresh(db_product)
     return db_product
 
+
 @app.get("/products/{product_id}", response_model=ProductRead)
 async def get_product(
-    product_id: int, session: AsyncSession = Depends(get_session)
+        product_id: int, session: AsyncSession = Depends(get_session)
 ):
     """Retrieve a product by its ID."""
     product = await session.get(Product, product_id)
@@ -96,16 +94,17 @@ async def get_product(
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+
 @app.get("/products", response_model=ProductList)
 async def search_products(
-    name: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    min_stock: Optional[int] = None,
-    max_stock: Optional[int] = None,
-    page: int = 1,
-    page_size: int = 10,
-    session: AsyncSession = Depends(get_session),
+        name: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        min_stock: Optional[int] = None,
+        max_stock: Optional[int] = None,
+        page: int = 1,
+        page_size: int = 10,
+        session: AsyncSession = Depends(get_session),
 ):
     """Search products by filters with pagination."""
     filters = []
@@ -133,12 +132,13 @@ async def search_products(
     stmt = stmt.offset((page - 1) * page_size).limit(page_size)
     result = (await session.execute(stmt)).scalars().all()
     return ProductList(items=result, total=total, page=page, page_size=page_size)
- 
+
+
 @app.patch("/products/{product_id}", response_model=ProductRead)
 async def update_product(
-    product_id: int,
-    product: ProductUpdate,
-    session: AsyncSession = Depends(get_session),
+        product_id: int,
+        product: ProductUpdate,
+        session: AsyncSession = Depends(get_session),
 ):
     """Update a product's fields by its ID."""
     db_product = await session.get(Product, product_id)
@@ -152,10 +152,11 @@ async def update_product(
     await session.refresh(db_product)
     return db_product
 
+
 @app.delete("/products/{product_id}", status_code=204)
 async def delete_product(
-    product_id: int,
-    session: AsyncSession = Depends(get_session),
+        product_id: int,
+        session: AsyncSession = Depends(get_session),
 ):
     """Delete a product by its ID."""
     db_product = await session.get(Product, product_id)

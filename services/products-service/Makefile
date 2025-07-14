@@ -5,9 +5,10 @@ lint:
 	uv run ruff check
 
 prepare-environment:
-	docker compose up
+	docker compose up -d
 
 migrate:
+	export DATABASE_URL=postgresql://user:password@localhost:5432/database && \
 	uv run alembic upgrade head
 
 run-service:
