@@ -1,4 +1,6 @@
+import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Optional, List
 
 from fastapi import FastAPI, Depends, HTTPException, Response
@@ -6,6 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, Text, Float, select, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -55,8 +61,18 @@ class ProductUpdate(BaseModel):  # Pydantic schema for updates
     price: Optional[float] = None
     stock: Optional[int] = None
 
+# Enable OpenTelemetry auto-instrumentation manually because of the instrumentation issues.
+# Please see for more details:
+# https://github.com/open-telemetry/opentelemetry-python/issues/3477#issuecomment-1915743854
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import os, sys
+    if "PYTHONPATH" not in os.environ:
+        os.environ["PYTHONPATH"] = ":".join(sys.path)
+    import opentelemetry.instrumentation.auto_instrumentation.sitecustomize
+    yield
 
-app = FastAPI(title="Products Service")
+app = FastAPI(title="Products Service", lifespan=lifespan)
 
 
 @app.on_event("startup")
@@ -166,8 +182,7 @@ async def delete_product(
     await session.commit()
     return Response(status_code=204)
 
-
+app = OpenTelemetryMiddleware(app)
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
