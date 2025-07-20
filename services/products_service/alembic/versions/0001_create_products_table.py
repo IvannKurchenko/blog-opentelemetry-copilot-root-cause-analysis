@@ -1,7 +1,7 @@
 """create products table
 
 Revision ID: 0001_create_products
-Revises: 
+Revises:
 Create Date: 2025-07-14 00:00:00.000000
 """
 
@@ -13,6 +13,7 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+
 def upgrade():
     op.create_table(
         "products",
@@ -22,6 +23,7 @@ def upgrade():
         sa.Column("price", sa.Float(), nullable=False),
         sa.Column("stock", sa.Integer(), nullable=False),
     )
+
 
 def downgrade():
     op.drop_table("products")
