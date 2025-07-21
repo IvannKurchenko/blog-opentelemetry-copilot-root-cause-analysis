@@ -41,7 +41,7 @@ run-environment:
 	docker compose up -d
 
 migrate:
-	export DATABASE_URL=postgresql://user:password@localhost:5432/database && \
+	export MIGRATE_DATABASE_URL=postgresql://user:password@localhost:5432/products && \
 	alembic upgrade head
 
 run-application:
@@ -59,5 +59,13 @@ run: run-environment migrate run-application
 #
 # Build: build the Docker image for the service
 #
+.PHONY: build
+
 build:
-	docker build -t products-service .
+	@echo "Building Docker image..."
+	@docker build -t products-service .
+
+
+run-build:
+	@echo "Running built Docker container with dependencies..."
+	@docker-compose -f all-docker-compose.yml up

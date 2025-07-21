@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://user:password@localhost:5432/database",
+    "postgresql+asyncpg://user:password@localhost:5432/products",
 )
 
 engine = create_async_engine(DATABASE_URL, echo=True)
