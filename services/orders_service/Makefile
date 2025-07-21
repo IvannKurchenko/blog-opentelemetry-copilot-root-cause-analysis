@@ -9,9 +9,11 @@ venv:
 	@echo "Creating virtual environment..."
 	@python -m venv $(VENV)
 	@echo "Virtual environment created at $(VENV)"
-	$(source .venv/bin/activate)
 
-install-dependencies:
+activate:
+	(source .venv/bin/activate)
+
+install-dependencies: activate
 	@echo "Installing dependencies..."
 	@pip install .
 	@pip install -e ".[dev]"
@@ -22,15 +24,15 @@ setup: venv install-dependencies
 #
 # Lint: run code quality checks
 #
-black:
+black: activate
 	@echo "Running black..."
 	black .
 
-ruff:
+ruff: activate
 	@echo "Running ruff..."
 	ruff check .
 
-mypy:
+mypy: activate
 	@echo "Running mypy..."
 	mypy --config-file pyproject.toml
 
@@ -57,5 +59,7 @@ run: run-environment run-application
 #
 # Build: build the Docker image for the service
 #
+.PHONY: build
+
 build:
 	docker build -t orders-service .
