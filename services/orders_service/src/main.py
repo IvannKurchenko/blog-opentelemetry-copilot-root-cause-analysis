@@ -2,17 +2,17 @@
 Orders Service Application Entry Point.
 """
 import logging
-import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 
 
 class Settings(BaseSettings):
     """Environment settings for Orders Service."""
-    redis_url: str = os.getenv("REDIS", "redis://localhost:6379/0")
-    kafka_bootstrap_servers: str = os.getenv("KAFKA", "localhost:9092")
+    redis_url: str = "redis://localhost:6379/0"
+    kafka_bootstrap_servers: str = "localhost:9092"
     kafka_topic: str = "orders"
     service_name: str = "orders-service"
 
@@ -53,6 +53,29 @@ async def startup_event():
         bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
     )
     await app.state.kafka_producer.start()
+
+    # Ensure Kafka topic exists
+    from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+    admin_client = AIOKafkaAdminClient(
+        bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
+    )
+    await admin_client.start()
+    try:
+        new_topic = NewTopic(
+            name=settings.kafka_topic,
+            num_partitions=1,
+            replication_factor=1,
+        )
+        result = await admin_client.create_topics([new_topic])
+        # result is a dict of topic -> exception for failures
+        if result:
+            for topic_name, error in result.items():
+                if error:
+                    logging.error(f"Failed to create topic {topic_name}: {error}")
+    except Exception as exc:
+        logging.error(f"Could not create topic {settings.kafka_topic}: {exc}")
+    finally:
+        await admin_client.close()
 
 
 @app.on_event("shutdown")

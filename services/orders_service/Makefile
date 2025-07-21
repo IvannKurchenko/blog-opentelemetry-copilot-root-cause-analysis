@@ -7,7 +7,9 @@ PIP := $(VENV)/bin/pip
 .PHONY: venv
 venv:
 	@echo "Creating virtual environment..."
-	$(PYTHON) -m venv $(VENV_DIR)
+	@python -m venv $(VENV)
+	@echo "Virtual environment created at $(VENV)"
+	$(source .venv/bin/activate)
 
 install-dependencies:
 	@echo "Installing dependencies..."
@@ -47,7 +49,7 @@ run-application:
 		--traces_exporter console \
 		--metrics_exporter console \
 		--logs_exporter console \
-		--service_name products-server \
+		--service_name orders-server \
 		uvicorn src.main:app --workers 1 --host 0.0.0.0 --port 8000 --reload
 
 run: run-environment run-application
@@ -56,4 +58,4 @@ run: run-environment run-application
 # Build: build the Docker image for the service
 #
 build:
-	docker build -t products-service .
+	docker build -t orders-service .

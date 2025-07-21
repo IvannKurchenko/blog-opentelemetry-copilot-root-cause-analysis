@@ -8,6 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.4",
     "fastapi[standard]>=0.116.1",
+    "pydantic-settings >=2.10.1",
     "opentelemetry-distro>=0.56b0",
     "opentelemetry-exporter-otlp>=1.35.0",
     "uvicorn[standard]>=0.35.0",
@@ -37,6 +38,3 @@ profile = "black"
 [tool.mypy]
 files = ["src"]
 check_untyped_defs = true
-
-[tool.ruff]
-exclude = ["alembic/"]

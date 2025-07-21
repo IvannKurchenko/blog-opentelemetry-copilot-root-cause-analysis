@@ -7,7 +7,7 @@ PIP := $(VENV)/bin/pip
 .PHONY: venv
 venv:
 	@echo "Creating virtual environment..."
-	$(PYTHON) -m venv $(VENV_DIR)
+	@python -m venv $(VENV)
 
 install-dependencies:
 	@echo "Installing dependencies..."

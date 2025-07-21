@@ -11,5 +11,5 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY . .
 EXPOSE 8000
 
-# Run database migrations then start the FastAPI server
+# Start the FastAPI server
 CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port 8000"]
