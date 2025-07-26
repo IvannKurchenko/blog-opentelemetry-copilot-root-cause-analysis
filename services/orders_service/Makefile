@@ -42,7 +42,7 @@ lint: black ruff mypy
 # Run: start the application and its dependencies
 #
 run-environment:
-	docker compose up -d
+	docker-compose -f docker-compose.env.yml up -d
 
 run-application:
 	export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true && \
@@ -62,4 +62,9 @@ run: run-environment run-application
 .PHONY: build
 
 build:
-	docker build -t orders-service .
+	@docker build -t orders-service .
+
+
+run-build:
+	@echo "Running built Docker container with dependencies..."
+	@docker-compose -f docker-compose.env.yml -f docker-compose.app.yml up

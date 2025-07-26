@@ -1,15 +1,18 @@
 FROM python:3.12-slim
 
-ENV PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y curl
+
+ENV PYTHONUNBUFFERED=1 \
+    OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
 
 WORKDIR /app
 COPY pyproject.toml ./
 
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir . && \
+    opentelemetry-bootstrap -a install
 
 COPY . .
 EXPOSE 8000
 
-# Start the FastAPI server
-CMD ["sh", "-c", "uvicorn src.main:otel_app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port 8000"]

@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  orders-service:
+    image: orders-service:latest
+    hostname: orders-service
+    environment:
+      REDIS_URL : "redis://redis:6379/0"
+      KAFKA_BOOTSTRAP_SERVERS : "kafka:9092"
+      KAFKA_TOPIC : "orders"
+      SERVICE_NAME : "orders-service"
+      PRODUCT_SERVICE_URL : "http://products-service:8000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      products-service:
+        condition: service_healthy
+    ports:
+      - "8000:8000"

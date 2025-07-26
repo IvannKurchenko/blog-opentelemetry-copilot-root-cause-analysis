@@ -38,7 +38,7 @@ lint: black ruff mypy
 # Run: start the application and its dependencies
 #
 run-environment:
-	docker compose up -d
+	@docker-compose -f docker-compose.env.yml up -d
 
 migrate:
 	export MIGRATE_DATABASE_URL=postgresql://user:password@localhost:5432/products && \
@@ -65,7 +65,6 @@ build:
 	@echo "Building Docker image..."
 	@docker build -t products-service .
 
-
 run-build:
 	@echo "Running built Docker container with dependencies..."
-	@docker-compose -f all-docker-compose.yml up
+	@docker-compose -f docker-compose.env.yml -f docker-compose.app.yml up

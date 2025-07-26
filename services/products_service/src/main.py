@@ -182,6 +182,11 @@ async def delete_product(
     return Response(status_code=204)
 
 
+@app.get("/health", status_code=200)
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
 # Enable OpenTelemetry middleware for instrumentation
 app = OpenTelemetryMiddleware(app)  # type: ignore
 

@@ -207,6 +207,10 @@ async def delete_order(order_id: str = Path(..., description="Order ID")) -> Non
     await redis.delete(key)
     await publish_event("order_deleted", order)
 
+@app.get("/health", status_code=status.HTTP_200_OK)
+async def health_check() -> dict:
+    """Health check endpoint."""
+    return {"status": "ok", "service": settings.service_name}
 
 # Enable OpenTelemetry middleware for instrumentation
 app = OpenTelemetryMiddleware(app)  # type: ignore
