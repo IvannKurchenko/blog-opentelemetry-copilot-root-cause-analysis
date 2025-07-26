@@ -1,0 +1,44 @@
+# Docker Compose that contains a complete Rocket.Chat communication stack with MongoDB.
+# Services are not intended to be run directly but rather contain definitions for use in other Docker Compose files.
+# Heavily inspired by the official Rocket.Chat Docker Compose example:
+# https://docs.rocket.chat/docs/deploy-with-docker-docker-compose
+services:
+  rocket-chat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:latest
+    restart: always
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.rocketchat.rule: Host(`${DOMAIN:-}`)
+      traefik.http.routers.rocketchat.tls: "true"
+      traefik.http.routers.rocketchat.entrypoints: https
+      traefik.http.routers.rocketchat.tls.certresolver: le
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      ROOT_URL: http://localhost:3000
+      PORT: 3000
+      DEPLOY_METHOD: docker
+      DEPLOY_PLATFORM:
+      REG_TOKEN:
+      OVERWRITE_SETTING_Show_Setup_Wizard: "completed"
+      OVERWRITE_SETTING_Accounts_Require_Email_Verification: "false"
+      ADMIN_USERNAME: admin
+      ADMIN_EMAIL: admin@acme.com
+      ADMIN_PASS: password
+      ADMIN_NAME: admin
+    expose:
+      - 3000
+    ports:
+      - "0.0.0.0:3000:3000"
+
+  mongodb:
+    image: docker.io/bitnami/mongodb:6.0
+    restart: always
+    environment:
+      MONGODB_REPLICA_SET_MODE: primary
+      MONGODB_REPLICA_SET_NAME: rs0
+      MONGODB_PORT_NUMBER: 27017
+      MONGODB_INITIAL_PRIMARY_HOST: mongodb
+      MONGODB_INITIAL_PRIMARY_PORT_NUMBER: 27017
+      MONGODB_ADVERTISED_HOSTNAME: mongodb
+      MONGODB_ENABLE_JOURNAL: true
+      ALLOW_EMPTY_PASSWORD: yes

@@ -1,0 +1,69 @@
+// Grafana agent configuration file setup OTLP receiver to receive data from OpenTelemetry collector.
+// Telemetry data then routed to Grafana stack backend services:
+// - Metrics are exported to Mimir;
+// - Traces are exported to Tempo;
+// - Logs are exported to Loki.
+// See the following documentation for more details:
+// - Grafana Agent - OTEL data configuration example: https://grafana.com/docs/agent/latest/flow/tasks/opentelemetry-to-lgtm-stack/
+
+otelcol.receiver.otlp "otlp" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    metrics = [otelcol.processor.batch.otlp.input]
+    logs    = [otelcol.processor.batch.otlp.input]
+    traces  = [otelcol.processor.batch.otlp.input]
+  }
+}
+
+otelcol.processor.batch "otlp" {
+  output {
+    metrics = [otelcol.exporter.prometheus.metrics.input]
+    logs    = [otelcol.exporter.loki.logs.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// The OpenTelemetry Prometheus exporter will transform incoming OTLP metrics data into Prometheus format data.
+otelcol.exporter.prometheus "metrics" {
+    forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+// The prometheus.remote_write component defines an endpoint for remotely writing metrics to.
+// In this case, our locally running Mimir service.
+prometheus.remote_write "mimir" {
+    // The endpoint is the Mimir service.
+    endpoint {
+        url = "http://mimir:9009/api/v1/push"
+    }
+}
+
+otelcol.exporter.loki "logs" {
+	forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+    }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    // Send to the locally running Tempo instance, on port 4317 (OTLP gRPC).
+    endpoint = "tempo:4317"
+    // Configure TLS settings for communicating with the endpoint.
+    tls {
+        // The connection is insecure.
+        insecure = true
+        // Do not verify TLS certificates when connecting.
+        insecure_skip_verify = true
+    }
+  }
+}

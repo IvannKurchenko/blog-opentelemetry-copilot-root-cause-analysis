@@ -18,10 +18,11 @@ import json
 import redis.asyncio as aioredis
 from aiokafka import AIOKafkaProducer
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     """Environment settings for Orders Service."""
-
     redis_url: str = "redis://localhost:6379/0"
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_topic: str = "orders"
@@ -77,7 +78,6 @@ kafka_producer = AIOKafkaProducer(
     bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
 )
 
-# Startup logic moved to the lifespan context manager.
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -115,13 +115,11 @@ async def lifespan(app: FastAPI):
         await admin_client.close()
 
 
-# Removed the deprecated @app.on_event("shutdown") logic as it is now handled in the lifespan context manager.
-
-
 async def validate_products(items: list[OrderItem]) -> None:
-    """Ensure all product IDs exist in the products service."""
+    """Ensure all product IDs exist in the products' service."""
     async with httpx.AsyncClient() as client:
         for item in items:
+            logger.info(f"Validating product ID {item.product_id} for order item.")
             resp = await client.get(
                 f"{settings.product_service_url}/products/{item.product_id}"
             )
@@ -144,29 +142,35 @@ async def publish_event(event_type: str, order: dict) -> None:
 @app.get("/orders", response_model=list[Order])
 async def list_orders() -> list[Order]:
     """Retrieve all orders."""
+    logger.info("Retrieving all orders from Redis.")
     keys = await redis.keys("order:*")
     orders: list[Order] = []
     for key in keys:
         raw = await redis.get(key)
         if raw:
             orders.append(Order(**json.loads(raw)))
+    logger.info(f"Found {len(orders)} orders.")
     return orders
 
 
 @app.get("/orders/{order_id}", response_model=Order)
 async def get_order(order_id: str = Path(..., description="Order ID")) -> Order:
     """Retrieve a specific order by ID."""
+    logger.info(f"Retrieving order with ID {order_id}.")
     raw = await redis.get(f"order:{order_id}")
     if not raw:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
+    logger.info(f"Order {order_id} retrieved successfully.")
     return Order(**json.loads(raw))
 
 
 @app.post("/orders", response_model=Order, status_code=status.HTTP_201_CREATED)
 async def create_order(request: CreateOrderRequest) -> Order:
     """Create a new order after validating products."""
+    logger.info(f"Creating order for user {request.user_id} with items: {request.items}")
+
     await validate_products(request.items)
     order_id = str(uuid.uuid4())
     order = {
@@ -175,17 +179,21 @@ async def create_order(request: CreateOrderRequest) -> Order:
         "items": [item.model_dump() for item in request.items],
         "status": "pending",
     }
+
     await redis.set(f"order:{order_id}", json.dumps(order))
     await publish_event("order_created", order)
+
+    logger.info(f"Order {order_id} created successfully.")
     return Order(**order)
 
 
 @app.put("/orders/{order_id}", response_model=Order)
 async def update_order(
-    order_id: str = Path(..., description="Order ID"),
-    request: UpdateOrderStatusRequest,
+        order_id: str = Path(..., description="Order ID"),
+        request: UpdateOrderStatusRequest,
 ) -> Order:
     """Update the status of an existing order."""
+    logger.info(f"Updating order {order_id} status to {request.status}.")
     raw = await redis.get(f"order:{order_id}")
     if not raw:
         raise HTTPException(
@@ -195,12 +203,16 @@ async def update_order(
     order["status"] = request.status
     await redis.set(f"order:{order_id}", json.dumps(order))
     await publish_event("order_updated", order)
+
+    logger.info(f"Order {order_id} updated successfully.")
     return Order(**order)
 
 
 @app.delete("/orders/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_order(order_id: str = Path(..., description="Order ID")) -> None:
     """Delete an order by ID."""
+    logger.info(f"Deleting order with ID {order_id}.")
+
     key = f"order:{order_id}"
     exists = await redis.exists(key)
     if not exists:
@@ -210,12 +222,16 @@ async def delete_order(order_id: str = Path(..., description="Order ID")) -> Non
     raw = await redis.get(key)
     order = json.loads(raw) if raw else {}
     await redis.delete(key)
+
+    logger.info(f"Order {order_id} deleted successfully.")
     await publish_event("order_deleted", order)
+
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "ok", "service": settings.service_name}
+
 
 # Enable OpenTelemetry middleware for instrumentation
 app = OpenTelemetryMiddleware(app)  # type: ignore

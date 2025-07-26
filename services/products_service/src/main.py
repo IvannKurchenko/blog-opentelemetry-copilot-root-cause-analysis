@@ -95,19 +95,26 @@ async def create_product(
     product: ProductCreate, session: AsyncSession = Depends(get_session)
 ):
     """Create a new product in the database."""
-    db_product = Product(**product.dict())
+    logger.info(f"Creating product {product.name}")
+
+    db_product = Product(**product.model_dump())
     session.add(db_product)
     await session.commit()
     await session.refresh(db_product)
+
+    logger.info(f"Product {db_product.name} created with ID {db_product.id}")
     return db_product
 
 
 @app.get("/products/{product_id}", response_model=ProductRead)
 async def get_product(product_id: int, session: AsyncSession = Depends(get_session)):
     """Retrieve a product by its ID."""
+    logger.info(f"Retrieving product with ID {product_id}")
     product = await session.get(Product, product_id)
     if not product:
+        logger.warning(f"Product with ID {product_id} not found")
         raise HTTPException(status_code=404, detail="Product not found")
+    logger.info(f"Product with ID {product_id} retrieved with ID {product.id}")
     return product
 
 
@@ -123,6 +130,8 @@ async def search_products(
     session: AsyncSession = Depends(get_session),
 ):
     """Search products by filters with pagination."""
+    logger.info("Searching products with filters: name=%s, min_price=%s, max_price=%s, min_stock=%s, max_stock=%s, page=%d, page_size=%d",
+                name, min_price, max_price, min_stock, max_stock, page, page_size)
     filters = []
     if name:
         filters.append(Product.name.ilike(f"%{name}%"))
@@ -138,14 +147,18 @@ async def search_products(
     count_stmt = select(func.count()).select_from(Product)
     if filters:
         count_stmt = count_stmt.where(*filters)
-    total = (await session.execute(count_stmt)).scalar_one()
 
-    stmt = select(Product)
+    total = (await session.execute(count_stmt)).scalar_one()
+    logger.info(f"Total products found: {total}")
+
+    statement = select(Product)
     if filters:
-        stmt = stmt.where(*filters)
-    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-    products = await session.execute(stmt)
+        statement = statement.where(*filters)
+    statement = statement.offset((page - 1) * page_size).limit(page_size)
+    products = await session.execute(statement)
     result = list(ProductRead(**dict(product)) for product in products.scalars().all())
+
+    logger.info(f"Products retrieved: {len(result)} on page {page} with page size {page_size}")
     return ProductList(items=result, total=total, page=page, page_size=page_size)
 
 
@@ -156,15 +169,19 @@ async def update_product(
     session: AsyncSession = Depends(get_session),
 ):
     """Update a product's fields by its ID."""
+    logger.info(f"Updating product with ID {product_id}")
     db_product = await session.get(Product, product_id)
     if not db_product:
+        logger.warning(f"Product with ID {product_id} not found for update")
         raise HTTPException(status_code=404, detail="Product not found")
-    update_data = product.dict(exclude_unset=True)
+
+    update_data = product.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_product, key, value)
     session.add(db_product)
     await session.commit()
     await session.refresh(db_product)
+    logger.info(f"Product with ID {product_id} updated successfully")
     return db_product
 
 
@@ -174,11 +191,14 @@ async def delete_product(
     session: AsyncSession = Depends(get_session),
 ):
     """Delete a product by its ID."""
+    logger.info(f"Deleting product with ID {product_id}")
     db_product = await session.get(Product, product_id)
     if not db_product:
+        logger.warning(f"Product with ID {product_id} not found for deletion")
         raise HTTPException(status_code=404, detail="Product not found")
     await session.delete(db_product)
     await session.commit()
+    logger.info(f"Product with ID {product_id} deleted successfully")
     return Response(status_code=204)
 
 
