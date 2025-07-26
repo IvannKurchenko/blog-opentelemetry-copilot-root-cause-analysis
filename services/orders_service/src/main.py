@@ -61,7 +61,8 @@ settings = Settings()
 # https://github.com/open-telemetry/opentelemetry-python/issues/3477#issuecomment-1915743854
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import os, sys  # noqa: E401
+    import os  # noqa: E401
+    import sys  # noqa: E401
 
     if "PYTHONPATH" not in os.environ:
         os.environ["PYTHONPATH"] = ":".join(sys.path)
