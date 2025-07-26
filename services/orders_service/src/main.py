@@ -77,9 +77,17 @@ kafka_producer = AIOKafkaProducer(
     bootstrap_servers=settings.kafka_bootstrap_servers.split(","),
 )
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize connections to Redis and Kafka on startup."""
+# Startup logic moved to the lifespan context manager.
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import os, sys  # noqa: E401
+
+    if "PYTHONPATH" not in os.environ:
+        os.environ["PYTHONPATH"] = ":".join(sys.path)
+    import opentelemetry.instrumentation.auto_instrumentation.sitecustomize  # noqa: F401
+
+    # Initialize Kafka producer
     await kafka_producer.start()
 
     # Ensure a Kafka topic exists
