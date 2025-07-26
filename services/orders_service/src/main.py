@@ -107,11 +107,7 @@ async def startup_event():
         await admin_client.close()
 
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup connections on shutdown."""
-    await kafka_producer.stop()
-    await redis.close()
+# Removed the deprecated @app.on_event("shutdown") logic as it is now handled in the lifespan context manager.
 
 
 async def validate_products(items: list[OrderItem]) -> None:
