@@ -172,7 +172,7 @@ async def create_order(request: CreateOrderRequest) -> Order:
     order = {
         "id": order_id,
         "user_id": request.user_id,
-        "items": [item.dict() for item in request.items],
+        "items": [item.model_dump() for item in request.items],
         "status": "pending",
     }
     await redis.set(f"order:{order_id}", json.dumps(order))
