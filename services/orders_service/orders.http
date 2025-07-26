@@ -1,0 +1,39 @@
+### Get all orders
+GET http://localhost:8000/orders
+
+### Get order by ID
+GET http://localhost:8000/orders/{order_id}
+
+### Create new product (POST /products)
+POST http://localhost:8001/products
+Content-Type: application/json
+
+{
+  "name": "Bluetooth Speaker",
+  "description": "Portable Bluetooth speaker",
+  "price": 49.99,
+  "stock": 50
+}
+
+### Create new order (POST /orders)
+POST http://localhost:8000/orders
+Content-Type: application/json
+
+{
+  "user_id": 789,
+  "items": [
+    {"product_id": 1, "quantity": 1},
+    {"product_id": 2, "quantity": 3}
+  ]
+}
+
+### Update order status (PUT /orders/{order_id})
+PUT http://localhost:8000/orders/{order_id}
+Content-Type: application/json
+
+{
+  "status": "shipped"
+}
+
+### Delete order
+DELETE http://localhost:8000/orders/{order_id}

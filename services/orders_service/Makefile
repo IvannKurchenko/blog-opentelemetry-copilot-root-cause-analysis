@@ -8,8 +8,12 @@ PIP := $(VENV)/bin/pip
 venv:
 	@echo "Creating virtual environment..."
 	@python -m venv $(VENV)
+	@echo "Virtual environment created at $(VENV)"
 
-install-dependencies:
+activate:
+	(source .venv/bin/activate)
+
+install-dependencies: activate
 	@echo "Installing dependencies..."
 	@pip install .
 	@pip install -e ".[dev]"
@@ -20,15 +24,15 @@ setup: venv install-dependencies
 #
 # Lint: run code quality checks
 #
-black:
+black: activate
 	@echo "Running black..."
 	black .
 
-ruff:
+ruff: activate
 	@echo "Running ruff..."
 	ruff check .
 
-mypy:
+mypy: activate
 	@echo "Running mypy..."
 	mypy --config-file pyproject.toml
 
@@ -38,11 +42,7 @@ lint: black ruff mypy
 # Run: start the application and its dependencies
 #
 run-environment:
-	@docker-compose -f docker-compose.env.yml up -d
-
-migrate:
-	export MIGRATE_DATABASE_URL=postgresql://user:password@localhost:5432/products && \
-	alembic upgrade head
+	docker-compose -f docker-compose.env.yml up -d
 
 run-application:
 	export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true && \
@@ -51,10 +51,10 @@ run-application:
 		--traces_exporter console \
 		--metrics_exporter console \
 		--logs_exporter console \
-		--service_name products-server \
+		--service_name orders-server \
 		uvicorn src.main:app --workers 1 --host 0.0.0.0 --port 8000 --reload
 
-run: run-environment migrate run-application
+run: run-environment run-application
 
 #
 # Build: build the Docker image for the service
@@ -62,8 +62,8 @@ run: run-environment migrate run-application
 .PHONY: build
 
 build:
-	@echo "Building Docker image..."
-	@docker build -t products-service .
+	@docker build -t orders-service .
+
 
 run-build:
 	@echo "Running built Docker container with dependencies..."

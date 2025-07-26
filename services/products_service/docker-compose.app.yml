@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  products-service:
+    image: products-service:latest
+    hostname: products-service
+    environment:
+      MIGRATE_DATABASE_URL: "postgresql://user:password@postgres:5432/products"
+      DATABASE_URL: "postgresql+asyncpg://user:password@postgres:5432/products"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"

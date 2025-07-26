@@ -1,21 +1,20 @@
 [project]
-name = "products-service"
+name = "orders-service"
 version = "0.1.0"
-description = "A service for managing products in an e-commerce application. See README for more details."
+description = "A service for managing orders in an e-commerce application. See README for more details."
 readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
     "alembic>=1.16.4",
-    "asyncpg>=0.30.0",
     "fastapi[standard]>=0.116.1",
     "pydantic-settings >=2.10.1",
     "opentelemetry-distro>=0.56b0",
     "opentelemetry-exporter-otlp>=1.35.0",
-    "psycopg2-binary>=2.9.10",
-    "ruff>=0.12.3",
-    "sqlalchemy>=2.0.41",
     "uvicorn[standard]>=0.35.0",
+    "redis>=4.6.0",
+    "aiokafka>=0.8.0",
+    "httpx>=0.24.0",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +39,3 @@ profile = "black"
 [tool.mypy]
 files = ["src"]
 check_untyped_defs = true
-
-[tool.ruff]
-exclude = ["alembic/"]

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+asyncpg://user:password@localhost:5432/database",
+    "postgresql+asyncpg://user:password@localhost:5432/products",
 )
 
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -182,10 +182,14 @@ async def delete_product(
     return Response(status_code=204)
 
 
+@app.get("/health", status_code=200)
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
 # Enable OpenTelemetry middleware for instrumentation
 app = OpenTelemetryMiddleware(app)  # type: ignore
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
