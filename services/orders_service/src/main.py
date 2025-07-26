@@ -183,7 +183,7 @@ async def create_order(request: CreateOrderRequest) -> Order:
 @app.put("/orders/{order_id}", response_model=Order)
 async def update_order(
     order_id: str = Path(..., description="Order ID"),
-    request: UpdateOrderStatusRequest = None,
+    request: UpdateOrderStatusRequest,
 ) -> Order:
     """Update the status of an existing order."""
     raw = await redis.get(f"order:{order_id}")
